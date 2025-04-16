@@ -7,6 +7,7 @@ import os
 import fitz  # PyMuPDF
 import pdfplumber
 from pdfinput import get_target_language,get_pdf_path
+from pdfformulaget import extract_formulas_from_pdf
 
 # 设置代理
 os.environ['http_proxy'] = '127.0.0.1:7890'
@@ -123,7 +124,7 @@ def process_formula_images(image_folder):
             messages = [
                 {
                     "role": "system",
-                    "content": "你是一个专业的数学公式识别助手。"
+                    "content": "你是一个专业的数学公式识别助手。只返回图片中的数学公式，不要包含其他文字,每一个公式单独成行，且前后分别加上$。"
                 },
                 {
                     "role": "user",
@@ -181,11 +182,16 @@ def main(pdf_path, target_language="zh"):  # 默认目标语言为中文
 
     # 处理 formula_img 文件夹中的图片并提取公式
     formula_img_folder = "formula_img"
-    formula_content = process_formula_images(formula_img_folder)
+    formula_content1 = process_formula_images(formula_img_folder)
 
-    # 将提取的公式内容写入 result2.txt 文件
-    with open("result\\formula_result.txt", "w", encoding="utf-8") as f:
-        f.write("\n".join(formula_content))
+    # 将提取的公式内容写入 result_cutpic.md 文件
+    with open("result\\formula_result_cutpic.md", "w", encoding="utf-8") as f:
+        f.write("\n".join(formula_content1))
+
+    formula_content2 = extract_formulas_from_pdf(pdf_path)
+    # 将提取的公式内容写入 formula_result_all 文件
+    with open("result\\formula_result_all.md", "w", encoding="utf-8") as f:
+        f.write("\n".join(formula_content1))
 
     print("处理完成！")
 
