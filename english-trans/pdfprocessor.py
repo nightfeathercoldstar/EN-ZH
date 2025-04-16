@@ -5,6 +5,7 @@ import fitz  # PyMuPDF
 import pdfplumber
 from pdfinput import get_target_language,get_pdf_path
 from pdfformulaget import extract_formulas_from_pdf, process_formula_images
+from pdffindformula import extract_non_chinese_with_equal
 
 # 设置代理
 os.environ['http_proxy'] = '127.0.0.1:7890'
@@ -89,7 +90,7 @@ def process_table(pdf_path):
     if all_tables:
         combined_df = pd.concat(all_tables, ignore_index=True)
         # 保存合并后的表格到Excel文件
-        combined_df.to_excel("F:\\english-trans\\result\\table_result.xlsx", index=False)
+        combined_df.to_excel("D:\\EN-ZH\\english-trans\\result\\table_result.xlsx", index=False)
 
 
 
@@ -126,18 +127,28 @@ def main(pdf_path, target_language="zh"):  # 默认目标语言为中文
         translated_part = response.choices[0].message.content
         translated_text += translated_part  # 将翻译结果拼接起来
 
-    # 保存结果
-    with open("result\\translated_result.txt", "w", encoding="utf-8") as f:
-        f.write(translated_text)
+    # results = extract_non_chinese_with_equal(translated_text)
+    # print(results)
 
     # 处理 formula_img 文件夹中的图片并提取公式
     formula_img_folder = "temp_images"
     formula_content1 = process_formula_images(formula_img_folder)
-    formula_content1 = [item.strip("对不起，我无法提取图片中的数学公式内容。") for item in formula_content1]
+    formula_content1 = [
+        item.strip("对不起，我无法提取图片中的数学公式内容。").replace("\n", "")
+        for item in formula_content1 if item
+    ]
+    # formula_content1提取有瑕疵，得改
+    # print(formula_content1)
+
+    translated_text = extract_non_chinese_with_equal(translated_text, formula_content1)
 
     # 将提取的公式内容写入 result.md 文件
     with open("result\\formula_result.md", "w", encoding="utf-8") as f:
         f.write("\n".join(formula_content1))
+
+    # 保存结果
+    with open("result\\translated_result.md", "w", encoding="utf-8") as f:
+        f.write(translated_text)
 
     print("处理完成！")
 
@@ -147,7 +158,7 @@ def run_translation():
     """
     获取用户输入的目标语言并调用 main 函数。
     """
-    pdf_path = r"F:\english-trans\pdf_store\test1.pdf"  # 假设 PDF 文件路径固定，也可以通过 input 获取
+    pdf_path = r"D:\EN-ZH\english-trans\pdf_store\test1.pdf"  # 假设 PDF 文件路径固定，也可以通过 input 获取
     pdf_path = get_pdf_path()
     target_language = get_target_language()
     main(pdf_path, target_language)
