@@ -1,3 +1,4 @@
+import glob
 import os
 from pdf2image import convert_from_path
 import base64
@@ -45,6 +46,26 @@ def extract_formulas_from_pdf(pdf_path):
         image_path = os.path.join(temp_image_dir, f"page_{page_num + 1}.png")
         image.save(image_path, "PNG")
 
+
+def process_formula_images(image_folder):
+    """
+    使用 LangChain 的 ChatOpenAI 处理 formula_img 文件夹中的图片，提取公式内容
+    """
+    formula_content = []  # 初始化公式内容列表
+    image_files = glob.glob(os.path.join(image_folder, "*.png")) + \
+                  glob.glob(os.path.join(image_folder, "*.jpg")) + \
+                  glob.glob(os.path.join(image_folder, "*.jpeg"))
+
+    # 实例化 ChatOpenAI 模型
+    llm = ChatOpenAI(
+        model="gpt-4-vision-preview",  # 使用支持图片识别的模型
+        temperature=0.7,  # 设置温度参数
+        max_tokens=150,  # 设置最大生成令牌数
+        timeout=10,  # 设置超时时间
+        max_retries=3,  # 设置最大重试次数
+    )
+
+    for image_path in image_files:
         try:
             # 打开图片并转换为 base64 编码
             with open(image_path, "rb") as image_file:
@@ -54,7 +75,7 @@ def extract_formulas_from_pdf(pdf_path):
             messages = [
                 {
                     "role": "system",
-                    "content": "你是一个专业的数学公式识别助手。只需要公式不需要表格，去掉所有的换行符，同时在每个公式前后加上$,每个公式单独成行"
+                    "content": "你是一个专业的数学公式识别助手。只返回图片中的纯数学公式，不要附带任何英文字母和中文，面对无法提取公式的图片不需要做任何回答，只回答可以提取数学公式的图片，每一个公式单独成行，且前后分别加上$。不要在回答中出现‘对不起，我无法提取图片中的数学公式内容。’"
                 },
                 {
                     "role": "user",
@@ -65,20 +86,13 @@ def extract_formulas_from_pdf(pdf_path):
                 }
             ]
 
-            # 调用大模型进行公式识别
+            # 调用 ChatOpenAI 模型进行图片识别
             response = llm.invoke(messages)
 
             # 提取公式内容
             formula_text = response.content.strip()
             formula_content.append(formula_text)
-
         except Exception as e:
             print(f"处理图片 {image_path} 时出错: {e}")
 
-    # 清理临时图片目录
-    for file_name in os.listdir(temp_image_dir):
-        os.remove(os.path.join(temp_image_dir, file_name))
-    os.rmdir(temp_image_dir)
-
     return formula_content
-

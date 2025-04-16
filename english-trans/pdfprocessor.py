@@ -1,13 +1,10 @@
-import base64
-import glob
 import pandas as pd
-from langchain.chat_models import ChatOpenAI
 from openai import OpenAI
 import os
 import fitz  # PyMuPDF
 import pdfplumber
 from pdfinput import get_target_language,get_pdf_path
-from pdfformulaget import extract_formulas_from_pdf
+from pdfformulaget import extract_formulas_from_pdf, process_formula_images
 
 # 设置代理
 os.environ['http_proxy'] = '127.0.0.1:7890'
@@ -96,58 +93,11 @@ def process_table(pdf_path):
 
 
 
-def process_formula_images(image_folder):
-    """
-    使用 LangChain 的 ChatOpenAI 处理 formula_img 文件夹中的图片，提取公式内容
-    """
-    formula_content = []  # 初始化公式内容列表
-    image_files = glob.glob(os.path.join(image_folder, "*.png")) + \
-                  glob.glob(os.path.join(image_folder, "*.jpg")) + \
-                  glob.glob(os.path.join(image_folder, "*.jpeg"))
 
-    # 实例化 ChatOpenAI 模型
-    llm = ChatOpenAI(
-        model="gpt-4-vision-preview",  # 使用支持图片识别的模型
-        temperature=0.7,  # 设置温度参数
-        max_tokens=150,  # 设置最大生成令牌数
-        timeout=10,  # 设置超时时间
-        max_retries=3,  # 设置最大重试次数
-    )
-
-    for image_path in image_files:
-        try:
-            # 打开图片并转换为 base64 编码
-            with open(image_path, "rb") as image_file:
-                encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
-
-            # 构造消息
-            messages = [
-                {
-                    "role": "system",
-                    "content": "你是一个专业的数学公式识别助手。只返回图片中的数学公式，不要包含其他文字,每一个公式单独成行，且前后分别加上$。"
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": "请识别以下图片中的公式内容："},
-                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{encoded_image}"}}
-                    ]
-                }
-            ]
-
-            # 调用 ChatOpenAI 模型进行图片识别
-            response = llm.invoke(messages)
-
-            # 提取公式内容
-            formula_text = response.content.strip()
-            formula_content.append(formula_text)
-        except Exception as e:
-            print(f"处理图片 {image_path} 时出错: {e}")
-
-    return formula_content
 
 # 主函数
 def main(pdf_path, target_language="zh"):  # 默认目标语言为中文
+    extract_formulas_from_pdf(pdf_path)
     text_content, media_content = processpdf(pdf_path)
     process_table(pdf_path)
 
@@ -181,16 +131,12 @@ def main(pdf_path, target_language="zh"):  # 默认目标语言为中文
         f.write(translated_text)
 
     # 处理 formula_img 文件夹中的图片并提取公式
-    formula_img_folder = "formula_img"
+    formula_img_folder = "temp_images"
     formula_content1 = process_formula_images(formula_img_folder)
+    formula_content1 = [item.strip("对不起，我无法提取图片中的数学公式内容。") for item in formula_content1]
 
-    # 将提取的公式内容写入 result_cutpic.md 文件
-    with open("result\\formula_result_cutpic.md", "w", encoding="utf-8") as f:
-        f.write("\n".join(formula_content1))
-
-    formula_content2 = extract_formulas_from_pdf(pdf_path)
-    # 将提取的公式内容写入 formula_result_all 文件
-    with open("result\\formula_result_all.md", "w", encoding="utf-8") as f:
+    # 将提取的公式内容写入 result.md 文件
+    with open("result\\formula_result.md", "w", encoding="utf-8") as f:
         f.write("\n".join(formula_content1))
 
     print("处理完成！")
