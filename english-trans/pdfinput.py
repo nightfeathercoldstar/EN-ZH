@@ -12,7 +12,7 @@ def get_pdf_path():
     """
     获取用户输入的pdf本地路径
     """
-    print("请复制粘贴要翻译的pdf本地路径（例如F:\english-trans\pdf_store\test1.pdf）：")
+    print("请复制粘贴要翻译的pdf本地路径（例如F:\\english-trans\\pdf_store\\test1.pdf）：")
     pdf_path = input().strip('"')
 
     # 定义正则表达式来匹配有效的文件路径

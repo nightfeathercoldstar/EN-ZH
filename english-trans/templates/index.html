@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF翻译服务</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <!-- 通知区域 -->
+    <div id="notifications" class="notifications"></div>
+
+    <!-- 加载器 -->
+    <div
+      id="loader"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        color: white;
+      "
+    >
+      <div class="spinner"></div>
+      <div id="loader-message" style="margin-top: 10px">加载中...</div>
+    </div>
+
+    <!-- 页面头部 -->
+    <header>
+      <div class="container">
+        <div class="logo">
+          <i
+            class="fas fa-file-pdf"
+            style="font-size: 32px; color: var(--primary-color)"
+          ></i>
+          <h1>PDF翻译服务</h1>
+        </div>
+      </div>
+    </header>
+
+    <!-- 主要内容区域 -->
+    <main>
+      <div class="container">
+        <div class="row">
+          <!-- 左侧上传和翻译区域 -->
+          <div class="card">
+            <h2 class="card-title">
+              <i class="fas fa-upload"></i>
+              PDF上传与翻译
+            </h2>
+
+            <form id="translation-form">
+              <!-- 拖放上传区域 -->
+              <div id="drop-area" class="drop-area">
+                <p>将PDF文件拖放到此处或点击上传</p>
+                <button id="upload-btn" type="button" class="btn">
+                  <i class="fas fa-cloud-upload-alt"></i> 选择文件
+                </button>
+                <input
+                  id="file-input"
+                  type="file"
+                  class="file-input"
+                  accept=".pdf"
+                />
+              </div>
+
+              <!-- 文件信息区域 -->
+              <div id="file-info-area" style="display: none"></div>
+
+              <!-- 语言选择 -->
+              <div class="form-group">
+                <label for="language">目标语言：</label>
+                <select id="language" class="form-control form-select">
+                  <option value="zh">中文</option>
+                  <option value="en">英文</option>
+                  <option value="ja">日文</option>
+                  <option value="ko">韩文</option>
+                  <option value="fr">法文</option>
+                  <option value="de">德文</option>
+                  <option value="es">西班牙文</option>
+                  <option value="ru">俄文</option>
+                </select>
+              </div>
+
+              <!-- 翻译按钮 -->
+              <button
+                id="translate-btn"
+                type="submit"
+                class="btn btn-icon"
+                disabled
+              >
+                <i class="fas fa-language"></i> 开始翻译
+              </button>
+            </form>
+
+            <!-- 状态区域 -->
+            <div id="status-area" style="display: none; margin-top: 20px"></div>
+          </div>
+
+          <!-- 右侧PDF列表 -->
+          <div class="card">
+            <h2 class="card-title">
+              <i class="fas fa-list"></i>
+              已上传的PDF
+              <button
+                id="refresh-pdf-list-btn"
+                class="btn btn-secondary"
+                style="margin-left: auto; padding: 5px 10px; font-size: 14px"
+              >
+                <i class="fas fa-sync-alt"></i> 刷新
+              </button>
+            </h2>
+
+            <ul id="pdf-list" class="pdf-list">
+              <!-- PDF项目将通过JavaScript动态添加 -->
+            </ul>
+          </div>
+
+          <!-- 结果展示区域 -->
+          <div id="result-area" class="card result-area">
+            <h2 class="card-title">
+              <i class="fas fa-file-alt"></i>
+              翻译结果
+            </h2>
+
+            <div class="result-tabs">
+              <div class="result-tab active" data-tab="text">文本</div>
+              <div class="result-tab" data-tab="formulas">公式</div>
+              <div class="result-tab" data-tab="images">图片</div>
+            </div>
+
+            <div class="result-content active" id="text-content-tab">
+              <div class="result-text" id="text-content">
+                <!-- 文本结果将在处理完成后显示 -->
+              </div>
+            </div>
+
+            <div class="result-content" id="formulas-content-tab">
+              <div class="result-text" id="formulas-content">
+                <!-- 公式结果将在处理完成后显示 -->
+              </div>
+            </div>
+
+            <div class="result-content" id="images-content-tab">
+              <div class="result-images" id="images-content">
+                <!-- 图片结果将在处理完成后显示 -->
+              </div>
+            </div>
+
+            <div style="margin-top: 20px">
+              <a
+                id="download-text-btn"
+                href="#"
+                class="btn btn-icon"
+                style="display: none; margin-right: 10px"
+              >
+                <i class="fas fa-download"></i> 下载文本结果
+              </a>
+              <a
+                id="download-formulas-btn"
+                href="#"
+                class="btn btn-icon"
+                style="display: none; margin-right: 10px"
+              >
+                <i class="fas fa-download"></i> 下载公式结果
+              </a>
+              <a
+                id="download-table-btn"
+                href="#"
+                class="btn btn-icon"
+                style="display: none; margin-right: 10px"
+              >
+                <i class="fas fa-download"></i> 下载表格结果
+              </a>
+              <a
+                id="download-all-btn"
+                href="#"
+                class="btn btn-success btn-icon"
+                style="display: none"
+              >
+                <i class="fas fa-download"></i> 下载所有结果
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer
+      style="
+        background-color: #f8f9fa;
+        padding: 20px 0;
+        margin-top: 40px;
+        text-align: center;
+        color: #6c757d;
+      "
+    >
+      <div class="container">
+        <p>PDF翻译服务 &copy; 2023</p>
+      </div>
+    </footer>
+
+    <script src="/static/js/app.js"></script>
+  </body>
+</html>

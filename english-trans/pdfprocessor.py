@@ -158,7 +158,7 @@ def run_translation():
     """
     获取用户输入的目标语言并调用 main 函数。
     """
-    pdf_path = r"D:\EN-ZH\english-trans\pdf_store\test1.pdf"  # 假设 PDF 文件路径固定，也可以通过 input 获取
+    pdf_path = r"F:\EN-ZH\english-trans\pdf_store\test1.pdf"  # 假设 PDF 文件路径固定，也可以通过 input 获取
     pdf_path = get_pdf_path()
     target_language = get_target_language()
     main(pdf_path, target_language)

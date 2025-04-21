@@ -1,0 +1,454 @@
+/* 基础样式 */
+:root {
+  --primary-color: #4361ee;
+  --secondary-color: #3f37c9;
+  --accent-color: #4895ef;
+  --light-color: #f8f9fa;
+  --dark-color: #212529;
+  --success-color: #4caf50;
+  --warning-color: #ff9800;
+  --error-color: #f44336;
+  --radius: 8px;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --transition: all 0.3s ease;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  background-color: #f5f7fb;
+  color: var(--dark-color);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* 头部区域 */
+header {
+  background-color: white;
+  box-shadow: var(--shadow);
+  padding: 20px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo h1 {
+  font-size: 24px;
+  color: var(--primary-color);
+}
+
+.logo img {
+  width: 40px;
+  height: 40px;
+}
+
+/* 主区域 */
+main {
+  padding: 40px 0;
+}
+
+.card {
+  background-color: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 30px;
+  margin-bottom: 30px;
+}
+
+.card-title {
+  font-size: 20px;
+  margin-bottom: 20px;
+  color: var(--dark-color);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-title i {
+  color: var(--primary-color);
+  font-size: 24px;
+}
+
+/* 表单样式 */
+.form-group {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.form-control {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: var(--radius);
+  font-size: 16px;
+  transition: var(--transition);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23212529' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 15px center;
+  background-size: 12px;
+}
+
+.btn {
+  display: inline-block;
+  padding: 12px 24px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: center;
+  text-decoration: none;
+}
+
+.btn:hover {
+  background-color: var(--secondary-color);
+  transform: translateY(-2px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background-color: #e0e0e0;
+  color: var(--dark-color);
+}
+
+.btn-secondary:hover {
+  background-color: #d0d0d0;
+}
+
+.btn-success {
+  background-color: var(--success-color);
+}
+
+.btn-success:hover {
+  background-color: #3d8b40;
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 文件上传区域 */
+.drop-area {
+  border: 2px dashed #ccc;
+  border-radius: var(--radius);
+  padding: 30px;
+  text-align: center;
+  margin-bottom: 20px;
+  transition: var(--transition);
+  background-color: #fafafa;
+}
+
+.drop-area.highlight {
+  border-color: var(--primary-color);
+  background-color: rgba(67, 97, 238, 0.05);
+}
+
+.drop-area p {
+  margin-bottom: 15px;
+  color: #666;
+}
+
+.file-input {
+  display: none;
+}
+
+.file-info {
+  margin-top: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: var(--radius);
+  background-color: #f0f0f0;
+}
+
+.file-info .file-icon {
+  font-size: 24px;
+  color: var(--primary-color);
+}
+
+.file-info .file-details {
+  flex: 1;
+}
+
+.file-info .file-details .file-name {
+  font-weight: 500;
+}
+
+.file-info .file-details .file-size {
+  font-size: 14px;
+  color: #666;
+}
+
+.file-info .file-remove {
+  color: var(--error-color);
+  cursor: pointer;
+  font-size: 18px;
+}
+
+/* PDF列表 */
+.pdf-list {
+  list-style: none;
+  margin-top: 20px;
+}
+
+.pdf-item {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  border-radius: var(--radius);
+  background-color: #f5f5f5;
+  margin-bottom: 10px;
+  transition: var(--transition);
+}
+
+.pdf-item:hover {
+  background-color: #eee;
+}
+
+.pdf-item .pdf-icon {
+  font-size: 24px;
+  color: var(--primary-color);
+  margin-right: 15px;
+}
+
+.pdf-item .pdf-info {
+  flex: 1;
+}
+
+.pdf-item .pdf-title {
+  font-weight: 500;
+}
+
+.pdf-item .pdf-path {
+  font-size: 14px;
+  color: #666;
+}
+
+.pdf-item .pdf-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* 结果区域 */
+.result-area {
+  display: none;
+  margin-top: 30px;
+}
+
+.result-area.active {
+  display: block;
+}
+
+.result-tabs {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.result-tab {
+  padding: 10px 20px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: var(--transition);
+}
+
+.result-tab.active {
+  border-bottom-color: var(--primary-color);
+  font-weight: 500;
+  color: var(--primary-color);
+}
+
+.result-content {
+  display: none;
+}
+
+.result-content.active {
+  display: block;
+}
+
+.result-text {
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: var(--radius);
+  max-height: 400px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.result-images {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.result-image {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.result-image:hover {
+  transform: scale(1.05);
+}
+
+/* 状态指示器 */
+.status {
+  padding: 10px 15px;
+  border-radius: var(--radius);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.status-processing {
+  background-color: rgba(255, 152, 0, 0.1);
+  color: var(--warning-color);
+}
+
+.status-completed {
+  background-color: rgba(76, 175, 80, 0.1);
+  color: var(--success-color);
+}
+
+.status-error {
+  background-color: rgba(244, 67, 54, 0.1);
+  color: var(--error-color);
+}
+
+/* 加载动画 */
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(67, 97, 238, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--primary-color);
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 通知 */
+.notifications {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.notification {
+  padding: 15px 20px;
+  border-radius: var(--radius);
+  background-color: white;
+  box-shadow: var(--shadow);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideIn 0.3s ease-out;
+  max-width: 350px;
+}
+
+.notification-success {
+  border-left: 4px solid var(--success-color);
+}
+
+.notification-error {
+  border-left: 4px solid var(--error-color);
+}
+
+.notification-info {
+  border-left: 4px solid var(--primary-color);
+}
+
+.notification .notification-icon {
+  font-size: 20px;
+}
+
+.notification .notification-content {
+  flex: 1;
+}
+
+.notification .notification-title {
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.notification .notification-close {
+  cursor: pointer;
+  color: #999;
+  font-size: 18px;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .card {
+    padding: 20px;
+  }
+  
+  .btn {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  
+  .result-tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+
+/* 图标字体 */
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'); 

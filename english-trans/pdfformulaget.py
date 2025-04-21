@@ -2,7 +2,7 @@ import glob
 import os
 from pdf2image import convert_from_path
 import base64
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 import os
 
 # 设置代理
@@ -75,7 +75,7 @@ def process_formula_images(image_folder):
             messages = [
                 {
                     "role": "system",
-                    "content": "你是一个专业的数学公式识别助手。只返回图片中的纯数学公式，不要附带任何英文字母和中文，面对无法提取公式的图片不需要做任何回答，只回答可以提取数学公式的图片，每一个公式单独成行，且前后分别加上$。不要在回答中出现‘对不起，我无法提取图片中的数学公式内容。’"
+                    "content": "你是一个专业的数学公式识别助手。只返回图片中的纯数学公式，不要附带任何英文字母和中文，面对无法提取公式的图片不需要做任何回答，只回答可以提取数学公式的图片，每一个公式单独成行，且前后分别加上$。不要在回答中出现'对不起，我无法提取图片中的数学公式内容。'"
                 },
                 {
                     "role": "user",
