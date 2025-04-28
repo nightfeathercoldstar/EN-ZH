@@ -6,6 +6,8 @@ import pdfplumber
 from pdfinput import get_target_language,get_pdf_path
 from pdfformulaget import extract_formulas_from_pdf, process_formula_images
 from pdffindformula import extract_non_chinese_with_equal
+import shutil
+import glob
 
 # 设置代理
 os.environ['http_proxy'] = '127.0.0.1:7890'
@@ -24,6 +26,46 @@ client = OpenAI(
     base_url=os.environ["OPENAI_API_BASE"],
     api_key=os.environ["OPENAI_API_KEY"],
 )
+
+# 清空或创建结果目录
+def clear_result_directory():
+    """
+    清空result目录中的所有文件，但保留目录结构
+    """
+    print("准备清空result目录...")
+    
+    # 确保result目录存在
+    result_dir = "result"
+    img_result_dir = os.path.join(result_dir, "img_result")
+    
+    # 确保目录存在
+    os.makedirs(result_dir, exist_ok=True)
+    os.makedirs(img_result_dir, exist_ok=True)
+    
+    # 删除文本和公式结果文件
+    files_to_clear = [
+        os.path.join(result_dir, "translated_result.md"),
+        os.path.join(result_dir, "formula_result.md"),
+        os.path.join(result_dir, "table_result.xlsx"),
+    ]
+    
+    for file_path in files_to_clear:
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                print(f"已删除文件: {file_path}")
+            except Exception as e:
+                print(f"删除文件失败 {file_path}: {str(e)}")
+    
+    # 清空img_result目录中的所有文件
+    for file_path in glob.glob(os.path.join(img_result_dir, "*")):
+        try:
+            os.remove(file_path)
+            print(f"已删除图片: {file_path}")
+        except Exception as e:
+            print(f"删除图片失败 {file_path}: {str(e)}")
+            
+    print("结果目录清空完成")
 
 
 # 处理 PDF 文件
@@ -90,14 +132,15 @@ def process_table(pdf_path):
     if all_tables:
         combined_df = pd.concat(all_tables, ignore_index=True)
         # 保存合并后的表格到Excel文件
-        combined_df.to_excel("D:\\EN-ZH\\english-trans\\result\\table_result.xlsx", index=False)
-
-
-
+        combined_df.to_excel("result/table_result.xlsx", index=False)
 
 
 # 主函数
 def main(pdf_path, target_language="zh"):  # 默认目标语言为中文
+    # 清空result目录，为新的转换做准备
+    clear_result_directory()
+    
+    print(f"开始处理PDF: {pdf_path}, 目标语言: {target_language}")
     extract_formulas_from_pdf(pdf_path)
     text_content, media_content = processpdf(pdf_path)
     process_table(pdf_path)
@@ -143,11 +186,11 @@ def main(pdf_path, target_language="zh"):  # 默认目标语言为中文
     translated_text = extract_non_chinese_with_equal(translated_text, formula_content1)
 
     # 将提取的公式内容写入 result.md 文件
-    with open("result\\formula_result.md", "w", encoding="utf-8") as f:
+    with open("result/formula_result.md", "w", encoding="utf-8") as f:
         f.write("\n".join(formula_content1))
 
     # 保存结果
-    with open("result\\translated_result.md", "w", encoding="utf-8") as f:
+    with open("result/translated_result.md", "w", encoding="utf-8") as f:
         f.write(translated_text)
 
     print("处理完成！")
@@ -158,7 +201,6 @@ def run_translation():
     """
     获取用户输入的目标语言并调用 main 函数。
     """
-    pdf_path = r"F:\EN-ZH\english-trans\pdf_store\test1.pdf"  # 假设 PDF 文件路径固定，也可以通过 input 获取
     pdf_path = get_pdf_path()
     target_language = get_target_language()
     main(pdf_path, target_language)

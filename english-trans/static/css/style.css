@@ -1,13 +1,17 @@
 /* 基础样式 */
 :root {
-  --primary-color: #4361ee;
-  --secondary-color: #3f37c9;
-  --accent-color: #4895ef;
+  --primary-color: #3772ff;
+  --primary-color-light: #719eff;
+  --primary-color-dark: #1855e7;
+  --success-color: #28a745;
+  --success-color-rgb: 40, 167, 69;  /* RGB values for success color */
+  --error-color: #dc3545;
+  --error-color-rgb: 220, 53, 69;    /* RGB values for error color */
+  --warning-color: #ffc107;
+  --info-color: #17a2b8;
   --light-color: #f8f9fa;
-  --dark-color: #212529;
-  --success-color: #4caf50;
-  --warning-color: #ff9800;
-  --error-color: #f44336;
+  --dark-color: #343a40;
+  --gray-color: #6c757d;
   --radius: 8px;
   --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   --transition: all 0.3s ease;
@@ -451,4 +455,209 @@ label {
 }
 
 /* 图标字体 */
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'); 
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
+.file-path-input {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.file-path-input input {
+  flex: 1;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.file-path-input button {
+  white-space: nowrap;
+}
+
+#path-validation-info {
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+#path-validation-info.valid {
+  background-color: rgba(var(--success-color-rgb), 0.1);
+  color: var(--success-color);
+  border: 1px solid var(--success-color);
+}
+
+#path-validation-info.invalid {
+  background-color: rgba(var(--error-color-rgb), 0.1);
+  color: var(--error-color);
+  border: 1px solid var(--error-color);
+}
+
+@media (max-width: 768px) {
+  .file-path-input {
+    flex-direction: column;
+  }
+}
+
+.file-list {
+  margin-top: 15px;
+  background-color: #f9f9f9;
+  border-radius: var(--radius);
+  padding: 15px;
+}
+
+.file-list-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  transition: var(--transition);
+}
+
+.file-list-item:last-child {
+  border-bottom: none;
+}
+
+.file-list-item:hover {
+  background-color: #f0f0f0;
+}
+
+.file-list-item .file-icon {
+  font-size: 20px;
+  margin-right: 12px;
+}
+
+.file-list-item .file-text {
+  color: var(--primary-color);
+}
+
+.file-list-item .file-formula {
+  color: var(--info-color);
+}
+
+.file-list-item .file-table {
+  color: var(--warning-color);
+}
+
+.file-list-item .file-image {
+  color: var(--success-color);
+}
+
+.file-list-item .file-info {
+  flex: 1;
+}
+
+.file-list-item .file-name {
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.file-list-item .file-size {
+  font-size: 12px;
+  color: #777;
+}
+
+.file-list-item .file-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.file-list-item .file-actions a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.file-list-item .file-actions a:hover {
+  text-decoration: underline;
+}
+
+.empty-message {
+  color: #777;
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+}
+
+.result-table-container {
+  padding: 20px;
+  background-color: #f9f9fa;
+  border-radius: var(--radius);
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.table-placeholder {
+  text-align: center;
+  padding: 40px 20px;
+  color: #777;
+}
+
+.table-placeholder i {
+  font-size: 48px;
+  margin-bottom: 15px;
+  color: var(--primary-color);
+}
+
+.table-placeholder p {
+  margin-bottom: 20px;
+  font-size: 18px;
+}
+
+.table-loading {
+  text-align: center;
+  padding: 40px 20px;
+  color: #777;
+}
+
+.table-loading i {
+  font-size: 36px;
+  margin-bottom: 15px;
+  color: var(--primary-color);
+}
+
+.table-loading p {
+  font-size: 16px;
+}
+
+.table-display {
+  display: none;
+}
+
+.table-controls {
+  margin-bottom: 15px;
+}
+
+/* Override Bootstrap table styles */
+.table {
+  margin-bottom: 0;
+  width: 100%;
+  color: #000000;
+  font-size: 14px;
+}
+
+.table th {
+  background-color: var(--primary-color-light);
+  color: #000000;
+  font-weight: 600;
+  vertical-align: middle;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.table td {
+  color: #000000;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.table-bordered > :not(caption) > * > * {
+  border-width: 1px;
+  border-color: #dee2e6;
+} 

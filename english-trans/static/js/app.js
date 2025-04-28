@@ -2,6 +2,7 @@
 let currentUploadedFile = null;
 let processingStatus = false;
 let currentLanguage = 'zh'; // 默认语言为中文
+let validatedLocalPath = null; // 存储验证过的本地PDF路径
 
 // DOM 加载完成后执行
 document.addEventListener('DOMContentLoaded', function() {
@@ -22,6 +23,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 初始化按钮事件
     initButtons();
+    
+    // 初始化本地路径验证
+    initPathValidation();
+    
+    // 检查是否已有结果可显示
+    loadAllResults();
 });
 
 // 初始化拖放区域
@@ -129,8 +136,8 @@ function removeFile() {
     document.getElementById('file-info-area').style.display = 'none';
     currentUploadedFile = null;
     
-    // 禁用翻译按钮
-    document.getElementById('translate-btn').disabled = true;
+    // 禁用翻译按钮 (如果本地路径也未验证)
+    document.getElementById('translate-btn').disabled = !validatedLocalPath;
 }
 
 // 上传文件
@@ -174,12 +181,85 @@ function initLanguageSelector() {
     });
 }
 
+// 初始化本地路径验证
+function initPathValidation() {
+    const validatePathBtn = document.getElementById('validate-path-btn');
+    const localPdfPath = document.getElementById('local-pdf-path');
+    const pathValidationInfo = document.getElementById('path-validation-info');
+    
+    validatePathBtn.addEventListener('click', async function() {
+        const path = localPdfPath.value.trim();
+        
+        if (!path) {
+            showPathValidationInfo('请输入文件路径', false);
+            return;
+        }
+        
+        // 使用正则表达式验证路径格式
+        const pattern = /^[A-Z]:\\(?:[^\\/:*?"<>|\r\n]+\\)*[^\\/:*?"<>|\r\n]+\.pdf$/i;
+        
+        if (!pattern.test(path)) {
+            showPathValidationInfo('路径格式不正确，请确保是有效的PDF文件路径', false);
+            validatedLocalPath = null;
+            document.getElementById('translate-btn').disabled = !currentUploadedFile;
+            return;
+        }
+        
+        try {
+            showLoader('正在验证文件路径...');
+            
+            // 发送请求验证路径
+            const response = await fetch('/validate-pdf-path/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ path: path })
+            });
+            
+            const result = await response.json();
+            hideLoader();
+            
+            if (result.valid) {
+                showPathValidationInfo(`文件有效: ${result.filename}`, true);
+                validatedLocalPath = path;
+                document.getElementById('translate-btn').disabled = false;
+            } else {
+                showPathValidationInfo(result.message || '文件路径无效或无法访问', false);
+                validatedLocalPath = null;
+                document.getElementById('translate-btn').disabled = !currentUploadedFile;
+            }
+        } catch (error) {
+            hideLoader();
+            showPathValidationInfo('验证路径时出错', false);
+            validatedLocalPath = null;
+            document.getElementById('translate-btn').disabled = !currentUploadedFile;
+        }
+    });
+    
+    // 当输入新路径时，清除验证结果
+    localPdfPath.addEventListener('input', function() {
+        pathValidationInfo.style.display = 'none';
+        validatedLocalPath = null;
+        document.getElementById('translate-btn').disabled = !currentUploadedFile;
+    });
+}
+
+// 显示路径验证信息
+function showPathValidationInfo(message, isValid) {
+    const pathValidationInfo = document.getElementById('path-validation-info');
+    pathValidationInfo.textContent = message;
+    pathValidationInfo.classList.remove('valid', 'invalid');
+    pathValidationInfo.classList.add(isValid ? 'valid' : 'invalid');
+    pathValidationInfo.style.display = 'block';
+}
+
 // 处理表单提交
 async function handleFormSubmit(e) {
     e.preventDefault();
     
-    if (!currentUploadedFile) {
-        showNotification('错误', '请先上传PDF文件', 'error');
+    if (!currentUploadedFile && !validatedLocalPath) {
+        showNotification('错误', '请先上传PDF文件或输入有效的本地PDF路径', 'error');
         return;
     }
     
@@ -190,7 +270,16 @@ async function handleFormSubmit(e) {
     
     try {
         const formData = new FormData();
-        formData.append('file_path', currentUploadedFile.path);
+        
+        // 使用上传的文件或本地路径
+        if (currentUploadedFile) {
+            formData.append('file_path', currentUploadedFile.path);
+            formData.append('use_local_path', 'false');
+        } else {
+            formData.append('file_path', validatedLocalPath);
+            formData.append('use_local_path', 'true');
+        }
+        
         formData.append('target_language', currentLanguage);
         
         showLoader('正在处理PDF...');
@@ -207,24 +296,20 @@ async function handleFormSubmit(e) {
         
         const result = await response.json();
         
-        // 更新处理状态
-        updateProcessingStatus(currentUploadedFile.filename, 'processing');
+        // 显示处理状态
+        updateProcessingStatus(currentUploadedFile ? currentUploadedFile.filename : '本地PDF文件', result);
         
-        // 显示状态区域
-        const statusArea = document.getElementById('status-area');
-        statusArea.innerHTML = `
-            <div class="status status-processing">
-                <i class="fas fa-spinner fa-spin"></i>
-                <span>PDF处理中，请稍候...</span>
-            </div>
-        `;
-        statusArea.style.display = 'block';
-        
-        // 启动轮询检查处理状态
-        checkProcessingStatus(currentUploadedFile.filename);
+        // 开始检查处理状态
+        const statusCheckInterval = setInterval(() => {
+            if (!processingStatus) {
+                clearInterval(statusCheckInterval);
+                return;
+            }
+            
+            checkProcessingStatus(currentUploadedFile ? currentUploadedFile.filename : '本地PDF文件');
+        }, 5000); // 每5秒检查一次
         
         hideLoader();
-        showNotification('提示', 'PDF处理已开始，请稍候查看结果', 'info');
     } catch (error) {
         hideLoader();
         processingStatus = false;
@@ -256,8 +341,27 @@ async function checkProcessingStatus(filename) {
                 </div>
             `;
             
-            // 加载结果
-            loadResults(result.results);
+            // 显示结果区域
+            const resultArea = document.getElementById('result-area');
+            resultArea.classList.add('active');
+            
+            // 加载所有可用的结果
+            loadAllResults();
+            
+            // 更新下载所有结果按钮
+            if (currentUploadedFile) {
+                document.getElementById('download-all-btn').style.display = 'inline-block';
+                document.getElementById('download-all-btn').href = `/download-results/${currentUploadedFile.filename}`;
+            } else {
+                // 如果是本地PDF文件，使用一个通用名称
+                document.getElementById('download-all-btn').style.display = 'inline-block';
+                document.getElementById('download-all-btn').href = `/download-results/local_pdf_results`;
+            }
+            
+            // 如果有表格结果，确保表格内容已加载
+            if (result.results && result.results.table) {
+                loadTableResult(result.results.table);
+            }
             
             processingStatus = false;
             showNotification('成功', 'PDF处理完成', 'success');
@@ -326,8 +430,162 @@ function loadResults(results) {
     }
     
     // 启用下载所有结果按钮
-    document.getElementById('download-all-btn').style.display = 'inline-block';
-    document.getElementById('download-all-btn').href = `/download-results/${currentUploadedFile.filename}`;
+    if (currentUploadedFile) {
+        document.getElementById('download-all-btn').style.display = 'inline-block';
+        document.getElementById('download-all-btn').href = `/download-results/${currentUploadedFile.filename}`;
+    } else {
+        // 如果是本地PDF文件，使用一个通用名称
+        document.getElementById('download-all-btn').style.display = 'inline-block';
+        document.getElementById('download-all-btn').href = `/download-results/local_pdf_results`;
+    }
+
+    // 加载所有可用的结果文件详情
+    loadAllResults();
+}
+
+// 加载所有结果文件详情
+async function loadAllResults() {
+    try {
+        const response = await fetch('/results/');
+        
+        if (!response.ok) {
+            throw new Error('获取结果文件列表失败');
+        }
+        
+        const allResults = await response.json();
+        
+        // 更新文本结果
+        if (allResults.text) {
+            loadTextResult(allResults.text.path);
+        }
+        
+        // 更新公式结果
+        if (allResults.formulas) {
+            loadFormulasResult(allResults.formulas.path);
+        }
+        
+        // 更新表格结果
+        if (allResults.table) {
+            loadTableResult(allResults.table.path);
+        }
+        
+        // 更新图片结果
+        if (allResults.images && allResults.images.length) {
+            const imagesContent = document.getElementById('images-content');
+            imagesContent.innerHTML = '';
+            
+            allResults.images.forEach(image => {
+                const imgElement = document.createElement('img');
+                imgElement.src = image.path;
+                imgElement.alt = image.filename;
+                imgElement.className = 'result-image';
+                
+                // 点击放大图片
+                imgElement.addEventListener('click', () => {
+                    window.open(image.path, '_blank');
+                });
+                
+                imagesContent.appendChild(imgElement);
+            });
+        }
+        
+        // 更新所有文件列表
+        updateAllFilesList(allResults);
+    } catch (error) {
+        console.error('加载所有结果文件失败:', error);
+    }
+}
+
+// 更新所有文件列表
+function updateAllFilesList(results) {
+    const filesList = document.getElementById('all-files-list');
+    
+    // 清空列表
+    filesList.innerHTML = '';
+    
+    let hasFiles = false;
+    
+    // 添加文本结果
+    if (results.text) {
+        hasFiles = true;
+        addFileListItem(filesList, {
+            type: 'text',
+            icon: 'fa-file-alt',
+            name: results.text.filename,
+            path: results.text.path,
+            size: formatFileSize(results.text.size)
+        });
+    }
+    
+    // 添加公式结果
+    if (results.formulas) {
+        hasFiles = true;
+        addFileListItem(filesList, {
+            type: 'formula',
+            icon: 'fa-square-root-alt',
+            name: results.formulas.filename,
+            path: results.formulas.path,
+            size: formatFileSize(results.formulas.size)
+        });
+    }
+    
+    // 添加表格结果
+    if (results.table) {
+        hasFiles = true;
+        addFileListItem(filesList, {
+            type: 'table',
+            icon: 'fa-table',
+            name: results.table.filename,
+            path: results.table.path,
+            size: formatFileSize(results.table.size)
+        });
+    }
+    
+    // 添加图片结果
+    if (results.images && results.images.length) {
+        hasFiles = true;
+        results.images.forEach(image => {
+            addFileListItem(filesList, {
+                type: 'image',
+                icon: 'fa-image',
+                name: image.filename,
+                path: image.path,
+                size: formatFileSize(image.size)
+            });
+        });
+    }
+    
+    // 如果没有文件，显示提示
+    if (!hasFiles) {
+        filesList.innerHTML = '<div class="empty-message">暂无结果文件</div>';
+    } else {
+        // 显示结果区域
+        document.getElementById('result-area').classList.add('active');
+    }
+}
+
+// 添加文件列表项
+function addFileListItem(container, file) {
+    const fileItem = document.createElement('div');
+    fileItem.className = 'file-list-item';
+    
+    fileItem.innerHTML = `
+        <i class="fas ${file.icon} file-icon file-${file.type}"></i>
+        <div class="file-info">
+            <div class="file-name">${file.name}</div>
+            <div class="file-size">${file.size}</div>
+        </div>
+        <div class="file-actions">
+            <a href="${file.path}" target="_blank">
+                <i class="fas fa-eye"></i> 查看
+            </a>
+            <a href="${file.path}" download>
+                <i class="fas fa-download"></i> 下载
+            </a>
+        </div>
+    `;
+    
+    container.appendChild(fileItem);
 }
 
 // 加载文本结果
@@ -397,6 +655,150 @@ function loadImageResults(images, imagesDir) {
     });
 }
 
+// 加载表格结果
+async function loadTableResult(tablePath) {
+    try {
+        // 设置下载按钮
+        document.getElementById('download-table-btn').href = tablePath;
+        document.getElementById('download-table-btn').style.display = 'inline-block';
+        
+        // 获取表格容器元素
+        const tableContent = document.getElementById('table-content');
+        const tableLoading = tableContent.querySelector('.table-loading');
+        const tableDisplay = tableContent.querySelector('.table-display');
+        
+        // 显示加载状态
+        if (tableLoading) {
+            tableLoading.style.display = 'block';
+        }
+        
+        // 隐藏表格显示
+        if (tableDisplay) {
+            tableDisplay.style.display = 'none';
+        }
+        
+        // 发起请求获取Excel文件
+        const response = await fetch(tablePath);
+        if (!response.ok) {
+            throw new Error('无法加载表格文件');
+        }
+        
+        const arrayBuffer = await response.arrayBuffer();
+        
+        // 使用SheetJS解析Excel文件
+        const data = new Uint8Array(arrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        // 获取工作表名称列表
+        const sheetNames = workbook.SheetNames;
+        
+        // 如果有多个工作表，则设置工作表选择器
+        const sheetSelector = document.getElementById('sheet-selector');
+        sheetSelector.innerHTML = '';
+        
+        if (sheetNames.length > 1) {
+            sheetNames.forEach(sheetName => {
+                const option = document.createElement('option');
+                option.value = sheetName;
+                option.textContent = sheetName;
+                sheetSelector.appendChild(option);
+            });
+            sheetSelector.style.display = 'block';
+            
+            // 添加工作表切换事件
+            sheetSelector.addEventListener('change', function() {
+                const selectedSheet = this.value;
+                displaySheetData(workbook, selectedSheet);
+            });
+        } else {
+            sheetSelector.style.display = 'none';
+        }
+        
+        // 显示第一个工作表的数据
+        displaySheetData(workbook, sheetNames[0]);
+        
+        // 隐藏加载状态，显示表格
+        if (tableLoading) {
+            tableLoading.style.display = 'none';
+        }
+        
+        if (tableDisplay) {
+            tableDisplay.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('加载表格失败:', error);
+        const tableContent = document.getElementById('table-content');
+        tableContent.innerHTML = `
+            <div class="table-placeholder">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>加载表格失败: ${error.message}</p>
+                <a href="${tablePath}" class="btn btn-primary" download>
+                    <i class="fas fa-download"></i> 下载表格文件查看
+                </a>
+            </div>
+        `;
+    }
+}
+
+// 显示工作表数据
+function displaySheetData(workbook, sheetName) {
+    // 获取指定工作表
+    const worksheet = workbook.Sheets[sheetName];
+    
+    // 将工作表转换为HTML表格
+    const excelTable = document.getElementById('excel-table');
+    
+    // 获取表格范围
+    const range = XLSX.utils.decode_range(worksheet['!ref']);
+    const startRow = range.s.r;
+    const endRow = range.e.r;
+    const startCol = range.s.c;
+    const endCol = range.e.c;
+    
+    // 创建表格头部和内容
+    let tableHTML = '<thead><tr>';
+    
+    // 生成表头（使用第一行作为表头）
+    for (let c = startCol; c <= endCol; c++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: startRow, c: c });
+        const cellData = worksheet[cellAddress];
+        const cellValue = cellData ? cellData.v : '';
+        tableHTML += `<th style="color: #000000;">${cellValue}</th>`;
+    }
+    
+    tableHTML += '</tr></thead><tbody>';
+    
+    // 生成表格内容（从第二行开始）
+    for (let r = startRow + 1; r <= endRow; r++) {
+        tableHTML += '<tr>';
+        
+        for (let c = startCol; c <= endCol; c++) {
+            const cellAddress = XLSX.utils.encode_cell({ r: r, c: c });
+            const cellData = worksheet[cellAddress];
+            const cellValue = cellData ? cellData.v : '';
+            
+            // 处理不同类型的单元格
+            if (cellData && cellData.t === 'n') {
+                // 数字类型
+                tableHTML += `<td class="text-end" style="color: #000000;">${cellValue}</td>`;
+            } else if (cellData && cellData.t === 'd') {
+                // 日期类型
+                tableHTML += `<td style="color: #000000;">${new Date(cellValue).toLocaleDateString()}</td>`;
+            } else {
+                // 其他类型
+                tableHTML += `<td style="color: #000000;">${cellValue}</td>`;
+            }
+        }
+        
+        tableHTML += '</tr>';
+    }
+    
+    tableHTML += '</tbody>';
+    
+    // 更新表格
+    excelTable.innerHTML = tableHTML;
+}
+
 // 初始化结果标签页
 function initResultTabs() {
     const tabs = document.getElementsByClassName('result-tab');
@@ -421,6 +823,9 @@ function initResultTabs() {
 function initButtons() {
     // 刷新PDF列表按钮
     document.getElementById('refresh-pdf-list-btn').addEventListener('click', loadPdfList);
+    
+    // 刷新结果按钮
+    document.getElementById('refresh-results-btn').addEventListener('click', loadAllResults);
 }
 
 // 加载PDF列表
