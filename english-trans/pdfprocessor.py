@@ -67,6 +67,26 @@ def clear_result_directory():
             
     print("结果目录清空完成")
 
+# 清空临时图片目录
+def clear_temp_images():
+    """
+    清空temp_images目录中的所有文件
+    """
+    print("准备清空temp_images目录...")
+    temp_images_dir = "temp_images"
+    
+    # 确保目录存在
+    os.makedirs(temp_images_dir, exist_ok=True)
+    
+    # 清空目录中的所有文件
+    for file_path in glob.glob(os.path.join(temp_images_dir, "*")):
+        try:
+            os.remove(file_path)
+            print(f"已删除临时图片: {file_path}")
+        except Exception as e:
+            print(f"删除临时图片失败 {file_path}: {str(e)}")
+            
+    print("临时图片目录清空完成")
 
 # 处理 PDF 文件
 def processpdf(pdf_path):
@@ -137,8 +157,9 @@ def process_table(pdf_path):
 
 # 主函数
 def main(pdf_path, target_language="zh"):  # 默认目标语言为中文
-    # 清空result目录，为新的转换做准备
+    # 清空result目录和temp_images目录，为新的转换做准备
     clear_result_directory()
+    clear_temp_images()
     
     print(f"开始处理PDF: {pdf_path}, 目标语言: {target_language}")
     extract_formulas_from_pdf(pdf_path)
@@ -170,9 +191,6 @@ def main(pdf_path, target_language="zh"):  # 默认目标语言为中文
         translated_part = response.choices[0].message.content
         translated_text += translated_part  # 将翻译结果拼接起来
 
-    # results = extract_non_chinese_with_equal(translated_text)
-    # print(results)
-
     # 处理 formula_img 文件夹中的图片并提取公式
     formula_img_folder = "temp_images"
     formula_content1 = process_formula_images(formula_img_folder)
@@ -181,9 +199,10 @@ def main(pdf_path, target_language="zh"):  # 默认目标语言为中文
         for item in formula_content1 if item
     ]
     # formula_content1提取有瑕疵，得改
-    # print(formula_content1)
+    print(formula_content1)
 
-    translated_text = extract_non_chinese_with_equal(translated_text, formula_content1)
+    # 处理公式替换
+    results, updated_text = extract_non_chinese_with_equal(translated_text, formula_content1)
 
     # 将提取的公式内容写入 result.md 文件
     with open("result/formula_result.md", "w", encoding="utf-8") as f:
@@ -191,7 +210,7 @@ def main(pdf_path, target_language="zh"):  # 默认目标语言为中文
 
     # 保存结果
     with open("result/translated_result.md", "w", encoding="utf-8") as f:
-        f.write(translated_text)
+        f.write(updated_text)
 
     print("处理完成！")
 

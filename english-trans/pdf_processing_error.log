@@ -1,0 +1,15 @@
+
+
+时间: 2025-04-30 16:32:30.225221
+文件路径: pdf_store/test.pdf
+目标语言: zh
+错误信息: not enough values to unpack (expected 2, got 1)
+错误详情:
+Traceback (most recent call last):
+  File "D:\EN-ZH\english-trans\interface.py", line 160, in process_pdf_task
+    main(processed_path, target_language)
+  File "D:\EN-ZH\english-trans\pdfprocessor.py", line 205, in main
+    results, updated_text = extract_non_chinese_with_equal(translated_text, formula_content1)
+    ^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 2, got 1)
+

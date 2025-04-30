@@ -26,7 +26,7 @@ def extract_non_chinese_with_equal(text, new_formulas):
     # 添加剩余的文本
     new_text += text[last_end:]
 
-    return new_text
+    return results,new_text
 
 
 # text = "这是一个测试字符串。1 + 2 = 3。另一个公式是 x = y + z。还有中文。"
